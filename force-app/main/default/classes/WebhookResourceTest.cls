@@ -242,6 +242,115 @@ private class WebhookResourceTest {
         Assert.areEqual('Test Project', projects[0].Project_Name__c, 'Project name should match');
         Assert.areEqual('This is a test project', projects[0].Description__c, 'Project description should match');
     }
+
+    @IsTest
+    static void testJiraProjectUpdatedWebhook() {
+        // Create test request
+        RestRequest req = new RestRequest();
+        req.requestURI = '/webhook/jira';
+        req.httpMethod = 'POST';
+        
+        // Create a sample Jira project created payload
+        String requestBody = '{' +
+            '"webhookEvent": "project_updated",' +
+            '"project": {' +
+                '"key": "TEST",' +
+                '"id": "10000",' +
+                '"name": "Test Project",' +
+                '"description": "This is a test project"' +
+            '}' +
+        '}';
+        
+        req.requestBody = Blob.valueOf(requestBody);
+        
+        // Set the request and response
+        RestContext.request = req;
+        RestContext.response = new RestResponse();
+        
+        Jira_Project__c projectToUpdate = new Jira_Project__c(
+            Project_Key__c = 'TEST',
+            Project_ID__c = '2000',
+            Project_Name__c = 'Update Me',
+            Description__c = 'I hope this updates!'
+        );
+
+        Database.insert(projectToUpdate, AccessLevel.SYSTEM_MODE);
+
+        // Call the REST resource
+        Test.startTest();
+        WebhookResource.ResponseWrapper response = WebhookResource.doPost();
+        Test.stopTest();
+        
+        // Assert the response
+        Assert.areEqual('success', response.status, 'Response status should be success');
+        
+        // Verify that the Jira project record was created
+        List<Jira_Project__c> projects = [
+            SELECT Id, Project_Key__c, Project_ID__c, Project_Name__c, Description__c
+            FROM Jira_Project__c
+            WHERE Id = :projectToUpdate.Id
+        ];
+        
+        Assert.areEqual(1, projects.size(), 'One Jira project record should be created');
+        Assert.areEqual('TEST', projects[0].Project_Key__c, 'Project key should match');
+        Assert.areEqual('10000', projects[0].Project_ID__c, 'Project ID should match');
+        Assert.areEqual('Test Project', projects[0].Project_Name__c, 'Project name should match');
+        Assert.areEqual('This is a test project', projects[0].Description__c, 'Project description should match');
+    }
+
+        @IsTest
+    static void testJiraProjectDeletedWebhook() {
+        // Create test request
+        RestRequest req = new RestRequest();
+        req.requestURI = '/webhook/jira';
+        req.httpMethod = 'POST';
+        
+        // Create a sample Jira project created payload
+        String requestBody = '{' +
+            '"webhookEvent": "project_deleted",' +
+            '"project": {' +
+                '"key": "TEST",' +
+                '"id": "10000",' +
+                '"name": "Test Project",' +
+                '"description": "This is a test project"' +
+            '}' +
+        '}';
+        
+        req.requestBody = Blob.valueOf(requestBody);
+        
+        // Set the request and response
+        RestContext.request = req;
+        RestContext.response = new RestResponse();
+        
+        Jira_Project__c projectToUpdate = new Jira_Project__c(
+            Project_Key__c = 'TEST',
+            Project_ID__c = '2000',
+            Project_Name__c = 'Update Me',
+            Description__c = 'I hope this updates!'
+        );
+
+        Database.insert(projectToUpdate, AccessLevel.SYSTEM_MODE);
+
+        List<Jira_Project__c> projectsBefore = [SELECT Id FROM Jira_Project__c WHERE Id = :projectToUpdate.Id];
+        Assert.isTrue(projectsBefore.size() > 0, 'Record should have been inserted');
+
+        // Call the REST resource
+        Test.startTest();
+        WebhookResource.ResponseWrapper response = WebhookResource.doPost();
+        Test.stopTest();
+        
+        // Assert the response
+        Assert.areEqual('success', response.status, 'Response status should be success');
+        
+        // Verify that the Jira project record was created
+        List<Jira_Project__c> projectsAfter = [
+            SELECT Id
+            FROM Jira_Project__c
+            WHERE Id = :projectToUpdate.Id
+        ];
+        
+        Assert.isTrue(projectsAfter.size() == 0, 'Record should have been deleted');
+    }
     
     /**
      * @description Test method for invalid webhook type
