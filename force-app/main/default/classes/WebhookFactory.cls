@@ -1,7 +1,7 @@
 /**
  * @description Factory class to process different types of webhooks
  * Uses the Factory pattern to create appropriate processors based on webhook type
- * @author Your Name
+ * @author Riley Meyer
  */
 public with sharing class WebhookFactory {
     
