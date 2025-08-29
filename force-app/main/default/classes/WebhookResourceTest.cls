@@ -245,12 +245,10 @@ private class WebhookResourceTest {
 
     @IsTest
     static void testJiraProjectUpdatedWebhook() {
-        // Create test request
         RestRequest req = new RestRequest();
         req.requestURI = '/webhook/jira';
         req.httpMethod = 'POST';
         
-        // Create a sample Jira project created payload
         String requestBody = '{' +
             '"webhookEvent": "project_updated",' +
             '"project": {' +
@@ -263,7 +261,6 @@ private class WebhookResourceTest {
         
         req.requestBody = Blob.valueOf(requestBody);
         
-        // Set the request and response
         RestContext.request = req;
         RestContext.response = new RestResponse();
         
@@ -276,15 +273,12 @@ private class WebhookResourceTest {
 
         Database.insert(projectToUpdate, AccessLevel.SYSTEM_MODE);
 
-        // Call the REST resource
         Test.startTest();
         WebhookResource.ResponseWrapper response = WebhookResource.doPost();
         Test.stopTest();
         
-        // Assert the response
         Assert.areEqual('success', response.status, 'Response status should be success');
         
-        // Verify that the Jira project record was created
         List<Jira_Project__c> projects = [
             SELECT Id, Project_Key__c, Project_ID__c, Project_Name__c, Description__c
             FROM Jira_Project__c
